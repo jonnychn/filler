@@ -78,7 +78,7 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-4">
             <button 
                 id="record-btn"
                 onclick="toggleRecording()"
@@ -94,11 +94,11 @@
                 Pause Recording
             </button>
             <button 
-                id="count-btn"
-                onclick="runAnalysis()"
-                class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md"
+                id="clear-btn"
+                onclick="clearTranscript()"
+                class="w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-red-700 active:bg-red-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md text-sm"
             >
-                Analyze Pasted Text
+                Clear Transcript
             </button>
             <button 
                 id="test-sample-btn"
@@ -107,11 +107,18 @@
             >
                 Test Sample
             </button>
+            <button 
+                id="count-btn"
+                onclick="runAnalysis()"
+                class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md"
+            >
+                Analyze Pasted Text
+            </button>
         </div>
 
         <!-- Help Tip -->
         <div id="help-tip" class="mt-4 text-sm text-gray-600 hidden">
-            <p>Filler words detected in pasted text: like, you know, i mean, so, basically, actually, literally, right, okay, well, just, ah, ahm, uh, uhm, um, umm, er, erm, hmm, arms, arse. <span class="text-red-500">Note:</span> Live transcription filler word detection is handled by the Web Speech API (an external provider) and cannot be customized.</p>
+            <p>Filler words detected in pasted text: like, you know, i mean, so, basically, actually, literally, right, okay, well, just, ah, ahm, uh, uhm, um, umm, sort of, kind of, to be honest, you know what I mean, you see. <span class="text-red-500">Note:</span> Live transcription filler word detection is handled by the Web Speech API (an external provider) and cannot be customized.</p>
         </div>
 
         <!-- Results Section (hidden by default) -->
@@ -205,9 +212,9 @@
          * The list of filler words and phrases to search for.
          */
         const FILLER_WORDS = [
-            'like', 'you know', 'i mean', 'so', 'basically', 'actually', 'literally', 
-            'right', 'okay', 'well', 'just', 'ah', 'ahm', 'uh', 'uhm', 'um', 'umm', 
-            'er', 'erm', 'hmm', 'arms', 'arse'
+            'like', 'you know', 'i mean', 'so', 'basically', 'actually', 'literally',
+            'right', 'okay', 'well', 'just', 'ah', 'ahm', 'uh', 'uhm', 'um', 'umm',
+            'sort of', 'kind of', 'to be honest', 'you know what I mean', 'you see'
         ];
         
         /**
@@ -361,9 +368,19 @@
          * Inserts a test sample into the transcript textarea.
          */
         function insertTestSample() {
-            const testSample = "Hey, you know, I was, like, so nervous about this, uh, presentation. I mean, basically, it’s, um, a big deal, right? Well, just imagine me standing there, ah, trying to, uhm, explain things, and, erm, I kept saying, like, 'actually' and 'literally' every, ahm, second. Okay, so, er, I think, hmm, it went okay, but, uh, I noticed I said 'right' and 'well' a lot too. Arms up, I guess, arse over tit with my nerves! Just, you know, trying to, umm, get through it.";
+            const testSample = "So, I was, like, walking down the street, and I saw this dog, right? And I was, um, kind of surprised because it, you know, literally just started barking at me. I mean, I didn’t do anything! Uh, maybe it was just nervous or something, you know?";
             document.getElementById('transcript').value = testSample;
             runAnalysis();
+        }
+
+        /**
+         * Clears the transcript and resets the results.
+         */
+        function clearTranscript() {
+            document.getElementById('transcript').value = '';
+            document.getElementById('results-container').classList.add('hidden');
+            document.getElementById('help-tip').classList.add('hidden');
+            document.getElementById('transcript').placeholder = "Your live transcript will appear here...";
         }
     </script>
 
