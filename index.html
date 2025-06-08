@@ -31,6 +31,25 @@
         .blinking {
             animation: blink 1.5s linear infinite;
         }
+        /* Tooltip styling */
+        .tooltip {
+            position: relative;
+        }
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1f2937;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            z-index: 10;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
@@ -40,7 +59,7 @@
         <!-- Header Section -->
         <div class="text-center mb-6">
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">🗣️ Live Filler Word Counter</h1>
-            <p class="text-gray-500 mt-2">Press "Start Recording" and speak. The app will transcribe and count filler words in real-time.</p>
+            <p class="text-gray-500 mt-2">Press "Start Recording" and speak. The app will transcribe and count filler words in real-time. <span class="tooltip" data-tooltip="Live transcription uses the Web Speech API, which may send data to Google Cloud for processing in some browsers. Analyzing pasted text is done locally on your device, ensuring privacy."><span class="underline cursor-help">Privacy Note</span></span></p>
         </div>
 
         <!-- Text Input Area -->
@@ -59,13 +78,20 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <button 
                 id="record-btn"
                 onclick="toggleRecording()"
                 class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-green-700 active:bg-green-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md"
             >
                 Start Recording
+            </button>
+            <button 
+                id="pause-btn"
+                onclick="togglePause()"
+                class="w-full bg-yellow-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-yellow-700 active:bg-yellow-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md hidden"
+            >
+                Pause Recording
             </button>
             <button 
                 id="count-btn"
@@ -75,7 +101,6 @@
                 Analyze Pasted Text
             </button>
         </div>
-
 
         <!-- Results Section (hidden by default) -->
         <div id="results-container" class="mt-8 hidden">
@@ -99,6 +124,7 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         let isRecording = false;
+        let isPaused = false;
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
@@ -107,6 +133,8 @@
             recognition.lang = 'en-US';
 
             recognition.onresult = (event) => {
+                if (isPaused) return; // Skip processing if paused
+
                 let interimTranscript = '';
                 let finalTranscript = '';
 
@@ -118,18 +146,17 @@
                     }
                 }
                 
-                // Update the textarea with the latest transcript
-                document.getElementById('transcript').value = document.getElementById('transcript').value.split(' (interim)')[0] + finalTranscript + ' <span class="text-gray-400">(interim)' + interimTranscript + '</span>';
-                document.getElementById('transcript').value = finalTranscript + interimTranscript;
-
+                // Update the textarea with the latest transcript, preserving history
+                const currentTranscript = document.getElementById('transcript').value.split(' (interim)')[0];
+                document.getElementById('transcript').value = currentTranscript + finalTranscript + ' (interim)' + interimTranscript;
 
                 // Run analysis in real-time
                 runAnalysis();
             };
 
             recognition.onend = () => {
-                if (isRecording) {
-                    // If it stops unexpectedly, restart it.
+                if (isRecording && !isPaused) {
+                    // Restart only if recording is active and not paused
                     recognition.start();
                 }
             };
@@ -138,15 +165,21 @@
                 console.error("Speech recognition error:", event.error);
                 updateStatus('Error. Please try again.', false);
                 isRecording = false;
+                isPaused = false;
+                updateButtonStates();
             };
 
         } else {
-            // Disable recording button if API is not supported
+            // Disable recording and pause buttons if API is not supported
             const recordBtn = document.getElementById('record-btn');
+            const pauseBtn = document.getElementById('pause-btn');
             recordBtn.disabled = true;
             recordBtn.textContent = 'Recording Not Supported';
             recordBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
             recordBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            pauseBtn.disabled = true;
+            pauseBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+            pauseBtn.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
         }
 
         /**
@@ -154,7 +187,8 @@
          */
         const FILLER_WORDS = [
             'like', 'you know', 'i mean', 'so', 'basically', 'actually', 'literally', 
-            'right', 'okay', 'well', 'just', 'ah', 'ahm', 'uh', 'uhm', 'um', 'umm', 'er', 'erm', 'hmm'
+            'right', 'okay', 'well', 'just', 'ah', 'ahm', 'uh', 'uhm', 'um', 'umm', 
+            'er', 'erm', 'hmm', 'arms', 'arse'
         ];
         
         /**
@@ -170,18 +204,40 @@
                 document.getElementById('record-btn').textContent = 'Stop Recording';
                 document.getElementById('record-btn').classList.replace('bg-green-600', 'bg-red-600');
                 document.getElementById('record-btn').classList.replace('hover:bg-green-700', 'hover:bg-red-700');
-
+                document.getElementById('pause-btn').classList.remove('hidden');
+                document.getElementById('pause-btn').disabled = false;
             } else {
                 recognition.stop();
+                isPaused = false;
                 updateStatus('Recording stopped.', false);
-                document.getElementById('record-btn').textContent = 'Start Recording';
-                document.getElementById('record-btn').classList.replace('bg-red-600', 'bg-green-600');
-                document.getElementById('record-btn').classList.replace('hover:bg-red-700', 'hover:bg-green-700');
+                updateButtonStates();
             }
         }
 
         /**
-         * Updates the status indicator in the UI.
+         * Pauses or resumes the speech recognition without resetting transcript.
+         */
+        function togglePause() {
+            if (!isRecording) return;
+
+            isPaused = !isPaused;
+            if (isPaused) {
+                recognition.stop();
+                updateStatus('Paused', false);
+                document.getElementById('pause-btn').textContent = 'Resume Recording';
+                document.getElementById('pause-btn').classList.replace('bg-yellow-600', 'bg-green-600');
+                document.getElementById('pause-btn').classList.replace('hover:bg-yellow-700', 'hover:bg-green-700');
+            } else {
+                recognition.start();
+                updateStatus('Listening...', true);
+                document.getElementById('pause-btn').textContent = 'Pause Recording';
+                document.getElementById('pause-btn').classList.replace('bg-green-600', 'bg-yellow-600');
+                document.getElementById('pause-btn').classList.replace('hover:bg-green-700', 'hover:bg-yellow-700');
+            }
+        }
+
+        /**
+         * Updates the status indicator and button states in the UI.
          */
         function updateStatus(text, isListening) {
             const statusDiv = document.getElementById('status');
@@ -202,12 +258,27 @@
             }
         }
 
+        /**
+         * Updates button states based on recording and pause status.
+         */
+        function updateButtonStates() {
+            const recordBtn = document.getElementById('record-btn');
+            const pauseBtn = document.getElementById('pause-btn');
+            recordBtn.textContent = 'Start Recording';
+            recordBtn.classList.replace('bg-red-600', 'bg-green-600');
+            recordBtn.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
+            pauseBtn.textContent = 'Pause Recording';
+            pauseBtn.classList.replace('bg-green-600', 'bg-yellow-600');
+            pauseBtn.classList.replace('hover:bg-green-700', 'hover:bg-yellow-700');
+            pauseBtn.classList.add('hidden');
+            pauseBtn.disabled = true;
+        }
 
         /**
-         * Main function to count filler words. Renamed to be more generic.
+         * Main function to count filler words.
          */
         function runAnalysis() {
-            const text = document.getElementById('transcript').value;
+            const text = document.getElementById('transcript').value.split(' (interim)')[0]; // Exclude interim text
             
             // No need for an alert if it's empty during live transcription
             if (!text.trim() && !isRecording) {
@@ -259,7 +330,7 @@
             });
 
             if (totalCount > 0 || isRecording) {
-                 resultsContainer.classList.remove('hidden');
+                resultsContainer.classList.remove('hidden');
             }
         }
     </script>
