@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filler Word Counter</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #155ab6;
+        }
+        #results {
+            margin-top: 25px;
+        }
+        #results h2 {
+            color: #333;
+            border-bottom: 2px solid #1a73e8;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        #fillerWordCounts, #totalCount {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🗣️ Filler Word Counter</h1>
+        <textarea id="transcript" placeholder="Paste your transcript here..."></textarea>
+        <button onclick="countFillerWords()">Count Filler Words</button>
+        <div id="results" style="display:none;">
+            <h2>Results</h2>
+            <p><strong>Total Filler Words: <span id="totalCount">0</span></strong></p>
+            <div id="fillerWordCounts"></div>
+        </div>
+    </div>
+
+    <script>
+        function countFillerWords() {
+            const fillerWords = [
+                "ah", "ahm", "uh", "uhm", "um", "umm", "er", "erm", "hmm",
+                "like", "you know", "i mean", "so", "basically", "actually",
+                "literally", "right", "okay", "well", "just"
+            ];
+
+            const transcript = document.getElementById('transcript').value;
+            if (!transcript.trim()) {
+                alert("Please paste some text to analyze.");
+                return;
+            }
+
+            const words = transcript.toLowerCase().match(/\b(\w+)\b/g);
+            const fillerWordCount = {};
+            let totalFillers = 0;
+
+            fillerWords.forEach(filler => {
+                fillerWordCount[filler] = 0;
+            });
+
+            if (words) {
+                words.forEach(word => {
+                    if (fillerWords.includes(word)) {
+                        fillerWordCount[word]++;
+                        totalFillers++;
+                    }
+                });
+            }
+
+            const resultsDiv = document.getElementById('results');
+            const totalCountSpan = document.getElementById('totalCount');
+            const fillerWordCountsDiv = document.getElementById('fillerWordCounts');
+
+            totalCountSpan.textContent = totalFillers;
+            fillerWordCountsDiv.innerHTML = '';
+
+            for (const word in fillerWordCount) {
+                if (fillerWordCount[word] > 0) {
+                    const p = document.createElement('p');
+                    p.innerHTML = `<strong>${word}:</strong> ${fillerWordCount[word]}`;
+                    fillerWordCountsDiv.appendChild(p);
+                }
+            }
+
+            resultsDiv.style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>
