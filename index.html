@@ -156,9 +156,9 @@
                     }
                 }
                 
-                // Update the textarea with the latest transcript, preserving history
-                const currentTranscript = document.getElementById('transcript').value.split(' (interim)')[0];
-                document.getElementById('transcript').value = currentTranscript + finalTranscript + ' (interim)' + interimTranscript;
+                // Append new transcript to existing content, preserving history
+                const currentTranscript = document.getElementById('transcript').value;
+                document.getElementById('transcript').value = currentTranscript + (currentTranscript ? ' ' : '') + finalTranscript + (interimTranscript ? ' (interim)' + interimTranscript : '');
 
                 // Run analysis in real-time
                 runAnalysis();
