@@ -78,7 +78,7 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <button 
                 id="record-btn"
                 onclick="toggleRecording()"
@@ -100,6 +100,18 @@
             >
                 Analyze Pasted Text
             </button>
+            <button 
+                id="test-sample-btn"
+                onclick="insertTestSample()"
+                class="w-full bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md text-sm"
+            >
+                Test Sample
+            </button>
+        </div>
+
+        <!-- Help Tip -->
+        <div id="help-tip" class="mt-4 text-sm text-gray-600 hidden">
+            <p>Filler words detected in pasted text: like, you know, i mean, so, basically, actually, literally, right, okay, well, just, ah, ahm, uh, uhm, um, umm, er, erm, hmm, arms, arse. <span class="text-red-500">Note:</span> Live transcription filler word detection is handled by the Web Speech API (an external provider) and cannot be customized.</p>
         </div>
 
         <!-- Results Section (hidden by default) -->
@@ -162,10 +174,16 @@
             };
             
             recognition.onerror = (event) => {
-                console.error("Speech recognition error:", event.error);
-                updateStatus('Error. Please try again.', false);
+                console.error("Speech recognition error:", event.error, event);
                 isRecording = false;
                 isPaused = false;
+                let errorMessage = "Error. Please try again.";
+                if (event.error === "not-allowed") {
+                    errorMessage = "Microphone access denied. Please allow microphone permissions and try again.";
+                } else if (event.error === "not-supported") {
+                    errorMessage = "Speech recognition not supported in this browser. Use Chrome or Edge.";
+                }
+                updateStatus(errorMessage, false);
                 updateButtonStates();
             };
 
@@ -180,6 +198,7 @@
             pauseBtn.disabled = true;
             pauseBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
             pauseBtn.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
+            updateStatus("Speech recognition not supported. Use Chrome or Edge.", false);
         }
 
         /**
@@ -301,6 +320,10 @@
             });
 
             updateResultsUI(totalCount, wordCounts);
+            // Show help tip when analyzing pasted text
+            if (!isRecording) {
+                document.getElementById('help-tip').classList.remove('hidden');
+            }
         }
         
         /**
@@ -332,6 +355,15 @@
             if (totalCount > 0 || isRecording) {
                 resultsContainer.classList.remove('hidden');
             }
+        }
+
+        /**
+         * Inserts a test sample into the transcript textarea.
+         */
+        function insertTestSample() {
+            const testSample = "Hey, you know, I was, like, so nervous about this, uh, presentation. I mean, basically, it’s, um, a big deal, right? Well, just imagine me standing there, ah, trying to, uhm, explain things, and, erm, I kept saying, like, 'actually' and 'literally' every, ahm, second. Okay, so, er, I think, hmm, it went okay, but, uh, I noticed I said 'right' and 'well' a lot too. Arms up, I guess, arse over tit with my nerves! Just, you know, trying to, umm, get through it.";
+            document.getElementById('transcript').value = testSample;
+            runAnalysis();
         }
     </script>
 
