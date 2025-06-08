@@ -41,7 +41,7 @@
             bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
-            background-color: #1f2937;
+            background-color: #1f2933;
             color: white;
             padding: 8px 12px;
             border-radius: 6px;
@@ -62,6 +62,11 @@
             <p class="text-gray-500 mt-2">Press "Start Recording" and speak. The app will transcribe and count filler words in real-time. <span class="tooltip" data-tooltip="Live transcription uses the Web Speech API, which may send data to Google Cloud for processing in some browsers. Analyzing pasted text is done locally on your device, ensuring privacy."><span class="underline cursor-help">Privacy Note</span></span></p>
         </div>
 
+        <!-- Test Sample Box -->
+        <div class="bg-gray-50 p-4 mb-4 rounded-lg text-sm text-gray-700">
+            <p><strong>Test Sample:</strong> Copy and paste this to try the tool: "So, I was, like, walking down the street, and I saw this dog, right? And I was, um, kind of surprised because it, you know, literally just started barking at me. I mean, I didn’t do anything! Uh, maybe it was just nervous or something, you know?"</p>
+        </div>
+
         <!-- Text Input Area -->
         <div class="mb-4 relative">
             <label for="transcript" class="sr-only">Transcript</label>
@@ -78,7 +83,7 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="grid grid-cols-1 sm:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <button 
                 id="record-btn"
                 onclick="toggleRecording()"
@@ -87,25 +92,11 @@
                 Start Recording
             </button>
             <button 
-                id="pause-btn"
-                onclick="togglePause()"
-                class="w-full bg-yellow-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-yellow-700 active:bg-yellow-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md hidden"
-            >
-                Pause Recording
-            </button>
-            <button 
                 id="clear-btn"
                 onclick="clearTranscript()"
                 class="w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-red-700 active:bg-red-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md text-sm"
             >
                 Clear Transcript
-            </button>
-            <button 
-                id="test-sample-btn"
-                onclick="insertTestSample()"
-                class="w-full bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md text-sm"
-            >
-                Test Sample
             </button>
             <button 
                 id="count-btn"
@@ -125,8 +116,8 @@
         <div id="results-container" class="mt-8 hidden">
             <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-gray-200 pb-3 mb-4">Analysis Results</h2>
             
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
-                <p class="text-lg font-semibold text-blue-800">
+            <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-lg mb-6">
+                <p class="text-lg font-semibold text-emerald-800">
                     Total Filler Words Found: <span id="total-count" class="font-bold">0</span>
                 </p>
             </div>
@@ -195,16 +186,12 @@
             };
 
         } else {
-            // Disable recording and pause buttons if API is not supported
+            // Disable recording button if API is not supported
             const recordBtn = document.getElementById('record-btn');
-            const pauseBtn = document.getElementById('pause-btn');
             recordBtn.disabled = true;
             recordBtn.textContent = 'Recording Not Supported';
             recordBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
             recordBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-            pauseBtn.disabled = true;
-            pauseBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-            pauseBtn.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
             updateStatus("Speech recognition not supported. Use Chrome or Edge.", false);
         }
 
@@ -218,47 +205,28 @@
         ];
         
         /**
-         * Starts or stops the speech recognition.
+         * Starts, pauses, or resumes the speech recognition.
          */
         function toggleRecording() {
             if (!SpeechRecognition) return;
 
-            isRecording = !isRecording;
-            if (isRecording) {
-                recognition.start();
-                updateStatus('Listening...', true);
-                document.getElementById('record-btn').textContent = 'Stop Recording';
-                document.getElementById('record-btn').classList.replace('bg-green-600', 'bg-red-600');
-                document.getElementById('record-btn').classList.replace('hover:bg-green-700', 'hover:bg-red-700');
-                document.getElementById('pause-btn').classList.remove('hidden');
-                document.getElementById('pause-btn').disabled = false;
-            } else {
-                recognition.stop();
+            if (!isRecording) {
+                isRecording = true;
                 isPaused = false;
-                updateStatus('Recording stopped.', false);
-                updateButtonStates();
-            }
-        }
-
-        /**
-         * Pauses or resumes the speech recognition without resetting transcript.
-         */
-        function togglePause() {
-            if (!isRecording) return;
-
-            isPaused = !isPaused;
-            if (isPaused) {
-                recognition.stop();
-                updateStatus('Paused', false);
-                document.getElementById('pause-btn').textContent = 'Resume Recording';
-                document.getElementById('pause-btn').classList.replace('bg-yellow-600', 'bg-green-600');
-                document.getElementById('pause-btn').classList.replace('hover:bg-yellow-700', 'hover:bg-green-700');
-            } else {
                 recognition.start();
                 updateStatus('Listening...', true);
-                document.getElementById('pause-btn').textContent = 'Pause Recording';
-                document.getElementById('pause-btn').classList.replace('bg-green-600', 'bg-yellow-600');
-                document.getElementById('pause-btn').classList.replace('hover:bg-green-700', 'hover:bg-yellow-700');
+                document.getElementById('record-btn').textContent = 'Pause/Resume';
+                document.getElementById('record-btn').classList.replace('bg-green-600', 'bg-amber-500');
+                document.getElementById('record-btn').classList.replace('hover:bg-green-700', 'hover:bg-amber-600');
+            } else {
+                isPaused = !isPaused;
+                if (isPaused) {
+                    recognition.stop();
+                    updateStatus('Paused', false);
+                } else {
+                    recognition.start();
+                    updateStatus('Listening...', true);
+                }
             }
         }
 
@@ -289,15 +257,11 @@
          */
         function updateButtonStates() {
             const recordBtn = document.getElementById('record-btn');
-            const pauseBtn = document.getElementById('pause-btn');
-            recordBtn.textContent = 'Start Recording';
-            recordBtn.classList.replace('bg-red-600', 'bg-green-600');
-            recordBtn.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
-            pauseBtn.textContent = 'Pause Recording';
-            pauseBtn.classList.replace('bg-green-600', 'bg-yellow-600');
-            pauseBtn.classList.replace('hover:bg-green-700', 'hover:bg-yellow-700');
-            pauseBtn.classList.add('hidden');
-            pauseBtn.disabled = true;
+            if (!isRecording) {
+                recordBtn.textContent = 'Start Recording';
+                recordBtn.classList.replace('bg-amber-500', 'bg-green-600');
+                recordBtn.classList.replace('hover:bg-amber-600', 'hover:bg-green-700');
+            }
         }
 
         /**
@@ -362,15 +326,6 @@
             if (totalCount > 0 || isRecording) {
                 resultsContainer.classList.remove('hidden');
             }
-        }
-
-        /**
-         * Inserts a test sample into the transcript textarea.
-         */
-        function insertTestSample() {
-            const testSample = "So, I was, like, walking down the street, and I saw this dog, right? And I was, um, kind of surprised because it, you know, literally just started barking at me. I mean, I didn’t do anything! Uh, maybe it was just nervous or something, you know?";
-            document.getElementById('transcript').value = testSample;
-            runAnalysis();
         }
 
         /**
