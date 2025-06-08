@@ -3,133 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Filler Word Counter</title>
+    <title>Real-Time Filler Word Counter</title>
+    
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
+        /* Custom styles to apply the Inter font */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
         }
-        .container {
-            background-color: #fff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 600px;
+        /* Custom focus ring color */
+        .focus-ring-blue-500:focus {
+            --tw-ring-opacity: 1;
+            --tw-ring-color: rgb(59 130 246 / var(--tw-ring-opacity));
+            box-shadow: 0 0 0 2px var(--tw-ring-color);
         }
-        h1 {
-            text-align: center;
-            color: #1a73e8;
-            margin-bottom: 20px;
+        /* Blinking animation for recording indicator */
+        @keyframes blink {
+            50% { opacity: 0; }
         }
-        textarea {
-            width: 100%;
-            height: 200px;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 16px;
-            resize: vertical;
-            box-sizing: border-box;
-            margin-bottom: 15px;
-        }
-        button {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background-color: #1a73e8;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #155ab6;
-        }
-        #results {
-            margin-top: 25px;
-        }
-        #results h2 {
-            color: #333;
-            border-bottom: 2px solid #1a73e8;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        #fillerWordCounts, #totalCount {
-            font-size: 16px;
-            line-height: 1.6;
+        .blinking {
+            animation: blink 1.5s linear infinite;
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
-    <div class="container">
-        <h1>🗣️ Filler Word Counter</h1>
-        <textarea id="transcript" placeholder="Paste your transcript here..."></textarea>
-        <button onclick="countFillerWords()">Count Filler Words</button>
-        <div id="results" style="display:none;">
-            <h2>Results</h2>
-            <p><strong>Total Filler Words: <span id="totalCount">0</span></strong></p>
-            <div id="fillerWordCounts"></div>
+    <main class="bg-white w-full max-w-2xl p-6 sm:p-8 rounded-2xl shadow-lg">
+        
+        <!-- Header Section -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">🗣️ Live Filler Word Counter</h1>
+            <p class="text-gray-500 mt-2">Press "Start Recording" and speak. The app will transcribe and count filler words in real-time.</p>
         </div>
-    </div>
+
+        <!-- Text Input Area -->
+        <div class="mb-4 relative">
+            <label for="transcript" class="sr-only">Transcript</label>
+            <textarea 
+                id="transcript" 
+                rows="10"
+                class="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus-ring-blue-500 transition duration-200"
+                placeholder="Your live transcript will appear here..."
+            ></textarea>
+            <div id="status" class="absolute top-3 right-3 text-sm text-gray-500 flex items-center hidden">
+                <span id="rec-indicator" class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                <span id="status-text"></span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button 
+                id="record-btn"
+                onclick="toggleRecording()"
+                class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-green-700 active:bg-green-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md"
+            >
+                Start Recording
+            </button>
+            <button 
+                id="count-btn"
+                onclick="runAnalysis()"
+                class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus-ring-blue-500 transition duration-200 shadow-md"
+            >
+                Analyze Pasted Text
+            </button>
+        </div>
+
+
+        <!-- Results Section (hidden by default) -->
+        <div id="results-container" class="mt-8 hidden">
+            <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-gray-200 pb-3 mb-4">Analysis Results</h2>
+            
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
+                <p class="text-lg font-semibold text-blue-800">
+                    Total Filler Words Found: <span id="total-count" class="font-bold">0</span>
+                </p>
+            </div>
+            
+            <div id="word-counts" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <!-- Individual counts are injected here -->
+            </div>
+        </div>
+
+    </main>
 
     <script>
-        function countFillerWords() {
-            const fillerWords = [
-                "ah", "ahm", "uh", "uhm", "um", "umm", "er", "erm", "hmm",
-                "like", "you know", "i mean", "so", "basically", "actually",
-                "literally", "right", "okay", "well", "just"
-            ];
+        // --- Web Speech API Setup ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isRecording = false;
 
-            const transcript = document.getElementById('transcript').value;
-            if (!transcript.trim()) {
-                alert("Please paste some text to analyze.");
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true; // Keep listening
+            recognition.interimResults = true; // Get results as they are being spoken
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                
+                // Update the textarea with the latest transcript
+                document.getElementById('transcript').value = document.getElementById('transcript').value.split(' (interim)')[0] + finalTranscript + ' <span class="text-gray-400">(interim)' + interimTranscript + '</span>';
+                document.getElementById('transcript').value = finalTranscript + interimTranscript;
+
+
+                // Run analysis in real-time
+                runAnalysis();
+            };
+
+            recognition.onend = () => {
+                if (isRecording) {
+                    // If it stops unexpectedly, restart it.
+                    recognition.start();
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+                updateStatus('Error. Please try again.', false);
+                isRecording = false;
+            };
+
+        } else {
+            // Disable recording button if API is not supported
+            const recordBtn = document.getElementById('record-btn');
+            recordBtn.disabled = true;
+            recordBtn.textContent = 'Recording Not Supported';
+            recordBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+            recordBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+        }
+
+        /**
+         * The list of filler words and phrases to search for.
+         */
+        const FILLER_WORDS = [
+            'like', 'you know', 'i mean', 'so', 'basically', 'actually', 'literally', 
+            'right', 'okay', 'well', 'just', 'ah', 'ahm', 'uh', 'uhm', 'um', 'umm', 'er', 'erm', 'hmm'
+        ];
+        
+        /**
+         * Starts or stops the speech recognition.
+         */
+        function toggleRecording() {
+            if (!SpeechRecognition) return;
+
+            isRecording = !isRecording;
+            if (isRecording) {
+                recognition.start();
+                updateStatus('Listening...', true);
+                document.getElementById('record-btn').textContent = 'Stop Recording';
+                document.getElementById('record-btn').classList.replace('bg-green-600', 'bg-red-600');
+                document.getElementById('record-btn').classList.replace('hover:bg-green-700', 'hover:bg-red-700');
+
+            } else {
+                recognition.stop();
+                updateStatus('Recording stopped.', false);
+                document.getElementById('record-btn').textContent = 'Start Recording';
+                document.getElementById('record-btn').classList.replace('bg-red-600', 'bg-green-600');
+                document.getElementById('record-btn').classList.replace('hover:bg-red-700', 'hover:bg-green-700');
+            }
+        }
+
+        /**
+         * Updates the status indicator in the UI.
+         */
+        function updateStatus(text, isListening) {
+            const statusDiv = document.getElementById('status');
+            const statusText = document.getElementById('status-text');
+            const recIndicator = document.getElementById('rec-indicator');
+            
+            if (text) {
+                statusDiv.classList.remove('hidden');
+                statusText.textContent = text;
+            } else {
+                statusDiv.classList.add('hidden');
+            }
+            
+            if (isListening) {
+                recIndicator.classList.add('blinking');
+            } else {
+                recIndicator.classList.remove('blinking');
+            }
+        }
+
+
+        /**
+         * Main function to count filler words. Renamed to be more generic.
+         */
+        function runAnalysis() {
+            const text = document.getElementById('transcript').value;
+            
+            // No need for an alert if it's empty during live transcription
+            if (!text.trim() && !isRecording) {
+                document.getElementById('transcript').placeholder = "Please paste some text first!";
                 return;
             }
 
-            const words = transcript.toLowerCase().match(/\b(\w+)\b/g);
-            const fillerWordCount = {};
-            let totalFillers = 0;
+            const lowerCaseText = text.toLowerCase();
+            let totalCount = 0;
+            const wordCounts = {};
 
-            fillerWords.forEach(filler => {
-                fillerWordCount[filler] = 0;
+            FILLER_WORDS.forEach(word => {
+                const regex = new RegExp('\\b' + word + '\\b', 'g');
+                const matches = lowerCaseText.match(regex);
+                const count = matches ? matches.length : 0;
+                if (count > 0) {
+                    wordCounts[word] = count;
+                    totalCount += count;
+                }
             });
 
-            if (words) {
-                words.forEach(word => {
-                    if (fillerWords.includes(word)) {
-                        fillerWordCount[word]++;
-                        totalFillers++;
-                    }
-                });
+            updateResultsUI(totalCount, wordCounts);
+        }
+        
+        /**
+         * Updates the results section of the UI with the latest counts.
+         */
+        function updateResultsUI(totalCount, wordCounts) {
+            const resultsContainer = document.getElementById('results-container');
+            const totalCountSpan = document.getElementById('total-count');
+            const wordCountsDiv = document.getElementById('word-counts');
+
+            wordCountsDiv.innerHTML = ''; // Clear previous results
+
+            totalCountSpan.textContent = totalCount;
+            
+            // Sort words by count for better visibility
+            const sortedWords = Object.keys(wordCounts).sort((a, b) => wordCounts[b] - wordCounts[a]);
+
+            sortedWords.forEach(word => {
+                const count = wordCounts[word];
+                const wordCard = document.createElement('div');
+                wordCard.className = 'bg-gray-100 p-4 rounded-lg text-center';
+                wordCard.innerHTML = `
+                    <p class="text-2xl font-bold text-gray-700">${count}</p>
+                    <p class="text-sm font-medium text-gray-500">${word}</p>
+                `;
+                wordCountsDiv.appendChild(wordCard);
+            });
+
+            if (totalCount > 0 || isRecording) {
+                 resultsContainer.classList.remove('hidden');
             }
-
-            const resultsDiv = document.getElementById('results');
-            const totalCountSpan = document.getElementById('totalCount');
-            const fillerWordCountsDiv = document.getElementById('fillerWordCounts');
-
-            totalCountSpan.textContent = totalFillers;
-            fillerWordCountsDiv.innerHTML = '';
-
-            for (const word in fillerWordCount) {
-                if (fillerWordCount[word] > 0) {
-                    const p = document.createElement('p');
-                    p.innerHTML = `<strong>${word}:</strong> ${fillerWordCount[word]}`;
-                    fillerWordCountsDiv.appendChild(p);
-                }
-            }
-
-            resultsDiv.style.display = 'block';
         }
     </script>
 
